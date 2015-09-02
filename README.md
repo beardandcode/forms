@@ -10,8 +10,11 @@ Find your way to the directory where you checked out this project and execute th
 $ lein repl
 
 user=> (load-forms)
-user=> (start-webapp! 8080)
-Listening on http://localhost:8080/
+user=> (start-webapp!)  ;; starts the example webapp on a random port
+Listening on http://localhost:53677/
+
+user=> (open-webapp!)   ;; only works on OSX as it uses /usr/bin/open
+                        ;; on linux point your browser at the url printed
+                        ;; after running start-webapp!
 ```
 
-Point your browser to [http://localhost:8080/](http://localhost:8080)

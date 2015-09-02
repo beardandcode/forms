@@ -1,5 +1,6 @@
 (ns com.beardandcode.forms.test.webapp
-  (:require [ring.adapter.jetty :refer [run-jetty]]
+  (:require [clojure.java.shell :as shell]
+            [ring.adapter.jetty :refer [run-jetty]]
             [compojure.core :refer :all]
             [compojure.route :as route]
             [hiccup.page :as hiccup]
@@ -32,6 +33,9 @@
   ([port]
      (alter-var-root (var server)
                      (fn [server] (or server (run-jetty (route-fn) {:port port :join? false}))))))
+
+(defn open-webapp! []
+  (shell/sh "open" (str "http://localhost:" (webapp-port) "/")))
 
 (defn stop-webapp! []
   (alter-var-root (var server) #(when % (.stop %))))
