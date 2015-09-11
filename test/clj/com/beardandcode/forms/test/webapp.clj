@@ -27,12 +27,11 @@
 (defn webapp-port [] (when server (-> server .getConnectors first .getLocalPort)))
 
 (defn start-webapp!
-  ([]
-     (start-webapp! 0)
-     (println (str "Listening on http://localhost:" (webapp-port) "/")))
+  ([] (start-webapp! (Integer. (or (System/getenv "PORT") 0))))
   ([port]
      (alter-var-root (var server)
-                     (fn [server] (or server (run-jetty (route-fn) {:port port :join? false}))))))
+                     (fn [server] (or server (run-jetty (route-fn) {:port port :join? false}))))
+     (println (str "Listening on http://localhost:" (webapp-port) "/"))))
 
 (defn open-webapp! []
   (shell/sh "open" (str "http://localhost:" (webapp-port) "/")))
