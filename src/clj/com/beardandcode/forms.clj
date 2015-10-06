@@ -13,5 +13,4 @@
            hiccup [:form {:action action :method method}
                    (render/schema schema-map)
                    [:input {:type "submit" :value (schema-map "submit")}]]]
-       ;;(println hiccup)
        hiccup)))
