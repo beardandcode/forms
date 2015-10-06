@@ -1,6 +1,10 @@
 (ns com.beardandcode.forms.test.webapp
   (:require [clojure.java.shell :as shell]
             [ring.adapter.jetty :refer [run-jetty]]
+            [ring.middleware.anti-forgery :refer [wrap-anti-forgery]]
+            [ring.middleware.params :refer [wrap-params]]
+            [ring.middleware.session :refer [wrap-session]]
+            [ring.util.anti-forgery :refer [anti-forgery-field]]
             [compojure.core :refer :all]
             [compojure.route :as route]
             [hiccup.page :as hiccup]
@@ -10,6 +14,11 @@
 (defschema register-schema "schema/test.json")
 
 
+(defn wrap-println [handler & _]
+  (fn [req]
+    (println req)
+    (handler req)))
+
 (defn route-fn []
   (-> (routes
 
@@ -17,9 +26,15 @@
                     [:head
                      [:title "Test form"]
                      [:link {:rel "stylesheet" :type "text/css" :href "/static/main.css"}]]
-                    [:body (build "/" register-schema)]))
+                    [:body (build "/" register-schema {:csrf-fn anti-forgery-field})]))
 
-       (route/resources "/static/"))))
+       (POST "/" [] "Did a thing")
+
+       (route/resources "/static/"))
+
+      wrap-anti-forgery
+      wrap-params
+      wrap-session))
 
 
 (def server nil)

@@ -70,3 +70,7 @@
                 (map vector ["free" "premium"] inputs)))
     (is (every? (fn [[type elem]] (= (-> elem :content rest first) type))
                 (map vector ["Free" "Premium"] labels)))))
+
+(deftest test-csrf-fn
+  (let [form (->hickory [(forms/build "/" test-schema {:csrf-fn (fn [] ["<input type=\"hidden\" id=\"csrf\" />"])})])]
+    (is (= (count (s/select (s/id "csrf") form)) 1))))

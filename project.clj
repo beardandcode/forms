@@ -33,6 +33,7 @@
 
                                   ;; for test webapp
                                   [ring/ring-jetty-adapter "1.4.0"]
+                                  [ring/ring-anti-forgery "1.0.0"]
                                   [compojure "1.4.0"]
                                   [hiccup "1.0.5"]]
                    :source-paths ["dev"]

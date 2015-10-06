@@ -7,10 +7,12 @@
 
 (defn build
   ([action schema] (build action schema {}))
-  ([action schema {:keys [method]
-                   :or {method "POST"}}]
+  ([action schema {:keys [method csrf-fn]
+                   :or {method "POST"
+                        csrf-fn (fn [& _] '())}}]
      (let [schema-map (schema/as-map schema)
            hiccup [:form {:action action :method method}
-                   (render/schema schema-map)
-                   [:input {:type "submit" :value (schema-map "submit")}]]]
+                   (concat '() (csrf-fn)
+                           (render/schema schema-map)
+                           (list [:input {:type "submit" :value (schema-map "submit")}]))]]
        hiccup)))
