@@ -1,35 +1,10 @@
 (ns com.beardandcode.forms
-  (:import [com.fasterxml.jackson.databind ObjectMapper]
-           [com.github.fge.jackson.jsonpointer JsonPointer]
-           [com.github.fge.jsonschema.core.load SchemaLoader]
-           [com.github.fge.jsonschema.main JsonSchemaFactory]
-           [com.beardandcode.forms SchemaWalker])
-  (:require [clojure.java.io :as io]
-            [clojure.string :as s]
-            [clojure.set :refer [difference]]))
-
-(defprotocol ISchema
-  (as-map [_])
-  (validate [_ instance]))
-
-(defrecord Schema [tree schema loader]
-  ISchema
-  (as-map [_] (.walk (SchemaWalker. loader) tree))
-  (validate [_ instance] false))
-
-(defn new-schema [path]
-  (if-let [file (-> path io/resource io/file)]
-    (let [mapper (ObjectMapper.)
-          node (.readTree mapper file)
-          factory (JsonSchemaFactory/byDefault)]
-      (if (.schemaIsValid (.getSyntaxValidator factory) node)
-        (let [loader (SchemaLoader.)
-              tree (.setPointer (.load loader node) (JsonPointer/empty))
-              schema (.getJsonSchema factory node)]
-          (Schema. tree schema loader))))))
+  (:require [clojure.string :as s]
+            [clojure.set :refer [difference]]
+            [com.beardandcode.forms.schema :as schema]))
 
 (defmacro defschema [symbol path]
-  `(def ~symbol (new-schema ~path)))
+  `(def ~symbol (schema/new ~path)))
 
 (defn pick-title [name details]
   (or (details "title") (s/capitalize (s/replace name #"[-_]" " "))))
@@ -64,7 +39,7 @@
   ([action schema] (build action schema {}))
   ([action schema {:keys [method]
                    :or {method "POST"}}]
-     (let [schema-map (as-map schema)
+     (let [schema-map (schema/as-map schema)
            hiccup [:form {:action action :method method}
                    (map #(build-property %) (sort-properties (schema-map "properties")
                                                              (schema-map "order")))

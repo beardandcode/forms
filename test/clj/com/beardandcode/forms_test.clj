@@ -11,11 +11,6 @@
 (forms/defschema description-schema "schema/description.json")
 (forms/defschema enum-schema "schema/enum.json")
 
-(deftest test-new-schema
-  (is (forms/new-schema "schema/test.json"))
-  (is (nil? (forms/new-schema "schema/invalid.json")))
-  (is (nil? (forms/new-schema "schema/does-not-exist.json"))))
-
 (deftest test-build-basics
   (let [form (->hickory [(forms/build "/endpoint" test-schema)])
         form-elem (first (s/select (s/tag :form) form))
