@@ -59,7 +59,7 @@ public class SchemaWalker {
 
     private Map<String, Object> processMap(final Map<String, Object> map) {
         return map.entrySet().stream()
-            .filter(e -> e.getKey() != "properties")
+            .filter(e -> !e.getKey().equals("properties"))
             .map(e -> {
                     Object value = e.getValue();
                     if (value instanceof Map) {

@@ -74,3 +74,43 @@
 (deftest test-csrf-fn
   (let [form (->hickory [(forms/build "/" test-schema {:csrf-fn (fn [] ["<input type=\"hidden\" id=\"csrf\" />"])})])]
     (is (= (count (s/select (s/id "csrf") form)) 1))))
+
+
+(deftest test-errors-missing-params
+  (let [request {:form-params {}}
+        errors (forms/errors request test-schema)]
+    (is (= (-> errors keys count) 3))
+    (is (some #(= % :required) (errors "email-address")))
+    (is (some #(= % :required) (errors "password")))
+    (is (some #(= % :required) (errors "repeat-password")))))
+
+(deftest test-errors-empty-params
+  (let [request {:form-params {"email-address" ""
+                               "password" ""
+                               "repeat-password" ""}}
+        errors (forms/errors request test-schema)]
+    (is (= (-> errors keys count) 3))
+    (is (some #(= % :required) (errors "email-address")))
+    (is (some #(= % :required) (errors "password")))
+    (is (some #(= % :required) (errors "repeat-password")))))
+
+(deftest test-errors-when-bad-email
+  (let [request {:form-params {"email-address" "foobar.com"
+                               "password" "asdf"
+                               "repeat-password" "asdf"}}
+        errors (forms/errors request test-schema)]
+    (is (= (-> errors keys count) 1))
+    (is (some #(= % :invalid-email) (errors "email-address")))))
+
+(deftest test-errors-when-valid
+  (let [request {:form-params {"email-address" "foo@bar.com"
+                               "password" "asdf"
+                               "repeat-password" "asdf"}}]
+    (is (nil? (forms/errors request test-schema)))))
+
+(deftest test-errors-trims-csrf-field
+  (let [request {:form-params {"csrf-field" "some-value"
+                               "email-address" "foo@bar.com"
+                               "password" "asdf"
+                               "repeat-password" "asdf"}}]
+    (is (nil? (forms/errors request test-schema {:csrf-field "csrf-field"})))))

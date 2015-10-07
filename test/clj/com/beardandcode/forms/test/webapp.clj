@@ -8,10 +8,10 @@
             [compojure.core :refer :all]
             [compojure.route :as route]
             [hiccup.page :as hiccup]
-            [com.beardandcode.forms :refer [defschema build]]))
+            [com.beardandcode.forms :as forms]))
 
 
-(defschema register-schema "schema/test.json")
+(forms/defschema register-schema "schema/test.json")
 
 
 (defn wrap-println [handler & _]
@@ -26,9 +26,10 @@
                     [:head
                      [:title "Test form"]
                      [:link {:rel "stylesheet" :type "text/css" :href "/static/main.css"}]]
-                    [:body (build "/" register-schema {:csrf-fn anti-forgery-field})]))
+                    [:body (forms/build "/" register-schema {:csrf-fn anti-forgery-field})]))
 
-       (POST "/" [] "Did a thing")
+       (POST "/" [:as request]
+         (str (forms/errors request register-schema)))
 
        (route/resources "/static/"))
 

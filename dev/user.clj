@@ -19,5 +19,9 @@
 (defn test-integration [] (run-all-tests #"^com.beardandcode.forms.integration.*-test$"))
 
 (defn javac []
-  (reimport 'com.beardandcode.forms.SchemaWalker)
+  (reimport 'com.beardandcode.forms.SchemaWalker
+            'com.beardandcode.forms.SubmitSyntaxChecker
+            'com.beardandcode.forms.OrderSyntaxChecker
+            'com.beardandcode.forms.PasswordFormatAttribute
+            'com.beardandcode.forms.Schema)
   (refresh-all))
