@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/beardandcode/forms.svg)](https://travis-ci.org/beardandcode/forms)
+[![Build Status](https://travis-ci.org/beardandcode/forms.svg?branch=master)](https://travis-ci.org/beardandcode/forms)
 
 A library to generate and validate HTML forms based on JSON Schema.
 
