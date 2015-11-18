@@ -8,10 +8,10 @@
             [compojure.core :refer :all]
             [compojure.route :as route]
             [hiccup.page :as hiccup]
-            [com.beardandcode.forms :refer [defschema build]]))
+            [com.beardandcode.forms :as forms]))
 
 
-(defschema register-schema "schema/test.json")
+(forms/defschema register-schema "schema/test.json")
 
 
 (defn wrap-println [handler & _]
@@ -19,16 +19,26 @@
     (println req)
     (handler req)))
 
+(defn render-form
+  ([] (render-form {} {}))
+  ([errors values]
+   (hiccup/html5
+     [:head
+      [:title "Test form"]
+      [:link {:rel "stylesheet" :type "text/css" :href "/static/main.css"}]]
+     [:body (forms/build "/" register-schema {:errors errors
+                                              :values values
+                                              :csrf-fn anti-forgery-field})])))
+
 (defn route-fn []
   (-> (routes
 
-       (GET "/" [] (hiccup/html5
-                    [:head
-                     [:title "Test form"]
-                     [:link {:rel "stylesheet" :type "text/css" :href "/static/main.css"}]]
-                    [:body (build "/" register-schema {:csrf-fn anti-forgery-field})]))
+       (GET "/" [] (render-form))
 
-       (POST "/" [] "Did a thing")
+       (POST "/" [:as request]
+         (if-let [errors (forms/errors request register-schema)]
+           (render-form errors (:form-params request))
+           "Form completed successfully."))
 
        (route/resources "/static/"))
 

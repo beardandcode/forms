@@ -31,7 +31,6 @@
         inputs (s/select (s/child (s/tag :label) (s/tag :input)) form)
         password-inputs (s/select (s/and (s/tag :input) (s/attr :type #(= % "password"))) form)
         submit-button (first (s/select (s/and (s/tag :input) (s/attr :type #(= % "submit"))) form))]
-    (spit "/tmp/schema-form.html" (hickory-to-html form))
     (is (= (count inputs) 6))              ;; five properties but one is an enum
     (is (= (count password-inputs) 2))     ;; so should be two radio inputs
     (is (= (mapv #(-> % :attrs :name) inputs)
@@ -61,7 +60,6 @@
         inputs (s/select (s/and (s/tag :input) (s/attr :type #(= % "radio"))) form)
         legend (first (s/select (s/child (s/tag :fieldset) (s/tag :legend)) form))
         description (first (s/select (s/child (s/tag :fieldset) (s/tag :p)) form))]
-    (spit "/tmp/schema-form-enum.html" (hickory-to-html form))
     (is (= (-> legend :content first) "Type"))
     (is (= (-> description :content first) "We have a couple of types available"))
     (is (= (count labels) (count inputs) 2))
@@ -74,3 +72,95 @@
 (deftest test-csrf-fn
   (let [form (->hickory [(forms/build "/" test-schema {:csrf-fn (fn [] ["<input type=\"hidden\" id=\"csrf\" />"])})])]
     (is (= (count (s/select (s/id "csrf") form)) 1))))
+
+(deftest test-build-with-values
+  (let [form (->hickory [(forms/build "/" test-schema {:values {"email-address" "foo@bar.com"
+                                                                "type" "free"
+                                                                "password" "foobles"}})])
+        email-address (first (s/select (s/and (s/tag :input) (s/attr :name #(= % "email-address"))) form))
+        types (s/select (s/and (s/tag :input) (s/attr :name #(= % "type"))) form)
+        password (first (s/select (s/and (s/tag :input) (s/attr :name #(= % "password"))) form))]
+    (is (= (-> email-address :attrs :value) "foo@bar.com"))
+    (is (nil? (-> password :attrs :value)))                 ;; passwords should never be echoed
+    (let [checked-types (filter #(not (nil? (-> % :attrs :checked))) types)]
+      (is (= (count checked-types) 1))
+      (is (= (-> checked-types first :attrs :value) "free")))))
+
+(deftest test-build-with-errors
+  (let [form (->hickory [(forms/build "/" test-schema {:errors {"email-address" [:invalid-email]
+                                                                "type" [:required :some-other-error]
+                                                                "password" [:required]}
+                                                       :error-text-fn #(str %3)})])
+        email (first (s/select (s/id "email-address") form))
+        email-errors (s/select (s/and (s/tag :p) (s/class "error")) email)
+        type (first (s/select (s/id "type") form))
+        type-errors (s/select (s/and (s/tag :p) (s/class "error")) type)
+        password (first (s/select (s/id "password") form))
+        password-errors (s/select (s/and (s/tag :p) (s/class "error")) password)
+        repeat-password (first (s/select (s/id "repeat-password") form))
+        repeat-password-errors (s/select (s/and (s/tag :p) (s/class "error")) repeat-password)]
+    (is (= (-> email :attrs :class) "error"))
+    (is (= (count email-errors) 1))
+    (is (= (-> email-errors first :content first) ":invalid-email"))
+    (is (= (-> type :attrs :class) "error"))
+    (is (= (count type-errors) 2))
+    (is (= (-> type-errors first :content first) ":required"))
+    (is (= (-> type-errors second :content first) ":some-other-error"))
+    (is (= (-> password :attrs :class) "error"))
+    (is (= (count password-errors) 1))
+    (is (= (-> password-errors first :content first) ":required"))
+    (is (= (-> repeat-password :attrs :class) ""))
+    (is (= (count repeat-password-errors) 0))))
+
+
+
+
+
+
+
+(deftest test-errors-missing-params
+  (let [request {:form-params {}}
+        errors (forms/errors request test-schema)]
+    (is (= (-> errors keys count) 3))
+    (is (some #(= % :required) (errors "email-address")))
+    (is (some #(= % :required) (errors "password")))
+    (is (some #(= % :required) (errors "repeat-password")))))
+
+(deftest test-errors-empty-params
+  (let [request {:form-params {"email-address" ""
+                               "password" ""
+                               "repeat-password" ""}}
+        errors (forms/errors request test-schema)]
+    (is (= (-> errors keys count) 3))
+    (is (some #(= % :required) (errors "email-address")))
+    (is (some #(= % :required) (errors "password")))
+    (is (some #(= % :required) (errors "repeat-password")))))
+
+(deftest test-errors-when-bad-email
+  (let [request {:form-params {"email-address" "foobar.com"
+                               "password" "asdf"
+                               "repeat-password" "asdf"}}
+        errors (forms/errors request test-schema)]
+    (is (= (-> errors keys count) 1))
+    (is (some #(= % :invalid-email) (errors "email-address")))))
+
+(deftest test-errors-when-valid
+  (let [request {:form-params {"email-address" "foo@bar.com"
+                               "password" "asdf"
+                               "repeat-password" "asdf"}}]
+    (is (nil? (forms/errors request test-schema)))))
+
+(deftest test-errors-trims-csrf-field
+  (let [request {:form-params {"csrf-field" "some-value"
+                               "email-address" "foo@bar.com"
+                               "password" "asdf"
+                               "repeat-password" "asdf"}}]
+    (is (nil? (forms/errors request test-schema {:csrf-field "csrf-field"})))))
+
+(deftest test-errors-goes-deep
+  (let [request {:form-params {"email-address" "asdf"}}
+        errors (forms/errors request test-schema)]
+    (is (= (-> errors keys count) 3))
+    (is (some #(= % :invalid-email) (errors "email-address")))
+    (is (some #(= % :required) (errors "password")))
+    (is (some #(= % :required) (errors "repeat-password")))))

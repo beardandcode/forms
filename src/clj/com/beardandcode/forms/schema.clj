@@ -1,28 +1,36 @@
 (ns com.beardandcode.forms.schema
-  (:import [com.fasterxml.jackson.databind ObjectMapper]
-           [com.github.fge.jackson.jsonpointer JsonPointer]
-           [com.github.fge.jsonschema.core.load SchemaLoader]
-           [com.github.fge.jsonschema.main JsonSchemaFactory]
-           [com.beardandcode.forms SchemaWalker])
-  (:require [clojure.java.io :as io]))
-
+  (:import [com.beardandcode.forms Schema])
+  (:require [clojure.java.io :as io]
+            [cheshire.core :as json]))
 
 (defprotocol ISchema
   (as-map [_])
   (validate [_ instance]))
 
-(defrecord Schema [tree schema loader]
+(extend Schema
   ISchema
-  (as-map [_] (.walk (SchemaWalker. loader) tree))
-  (validate [_ instance] false))
+  {:as-map #(.asMap %)
+   :validate (fn [s instance]
+               (let [raw-errors (json/parse-string (.validate s (json/generate-string instance)))]
+                 (if (not (empty? raw-errors))
+                   (->> raw-errors
+                        (map (fn [error] (cond
+                                           (= (error "keyword") "required")
+                                           (map #(list % :required) (error "missing"))
+                                           (= (error "keyword") "format")
+                                           [[(apply str (rest ((error "instance") "pointer")))
+                                             (keyword (str "invalid-" (error "attribute")))]]
+                                           :else
+                                           [])))
+                        (reduce (fn [error-map errors]
+                                  (reduce (fn [error-map [field error]]
+                                            (assoc error-map field (if-let [other-errors (error-map field)]
+                                                                     (conj other-errors error)
+                                                                     [error])))
+                                          error-map errors))
+                                {})))))})
 
 (defn new [path]
   (if-let [file (-> path io/resource io/file)]
-    (let [mapper (ObjectMapper.)
-          node (.readTree mapper file)
-          factory (JsonSchemaFactory/byDefault)]
-      (if (.schemaIsValid (.getSyntaxValidator factory) node)
-        (let [loader (SchemaLoader.)
-              tree (.setPointer (.load loader node) (JsonPointer/empty))
-              schema (.getJsonSchema factory node)]
-          (Schema. tree schema loader))))))
+    (let [schema (Schema. file)]
+      (if (.isValid schema) schema))))
