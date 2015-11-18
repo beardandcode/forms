@@ -19,17 +19,26 @@
     (println req)
     (handler req)))
 
+(defn render-form
+  ([] (render-form {} {}))
+  ([errors values]
+   (hiccup/html5
+     [:head
+      [:title "Test form"]
+      [:link {:rel "stylesheet" :type "text/css" :href "/static/main.css"}]]
+     [:body (forms/build "/" register-schema {:errors errors
+                                              :values values
+                                              :csrf-fn anti-forgery-field})])))
+
 (defn route-fn []
   (-> (routes
 
-       (GET "/" [] (hiccup/html5
-                    [:head
-                     [:title "Test form"]
-                     [:link {:rel "stylesheet" :type "text/css" :href "/static/main.css"}]]
-                    [:body (forms/build "/" register-schema {:csrf-fn anti-forgery-field})]))
+       (GET "/" [] (render-form))
 
        (POST "/" [:as request]
-         (str (forms/errors request register-schema)))
+         (if-let [errors (forms/errors request register-schema)]
+           (render-form errors (:form-params request))
+           "Form completed successfully."))
 
        (route/resources "/static/"))
 

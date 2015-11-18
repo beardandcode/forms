@@ -12,7 +12,6 @@
   {:as-map #(.asMap %)
    :validate (fn [s instance]
                (let [raw-errors (json/parse-string (.validate s (json/generate-string instance)))]
-                 (println raw-errors)
                  (if (not (empty? raw-errors))
                    (->> raw-errors
                         (map (fn [error] (cond
