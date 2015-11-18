@@ -23,6 +23,8 @@
   :javac-options ["-target" "1.8" "-source" "1.8"]
 
   :aliases {"checkall" ["do" ["check"] ["kibit"] ["eastwood"] ["bikeshed"]]}
+
+  :deploy-repositories [["clojars" {:sign-releases false}]]
   
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.10"]
                                   [leiningen #=(leiningen.core.main/leiningen-version)]
