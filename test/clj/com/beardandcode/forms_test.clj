@@ -114,3 +114,11 @@
                                "password" "asdf"
                                "repeat-password" "asdf"}}]
     (is (nil? (forms/errors request test-schema {:csrf-field "csrf-field"})))))
+
+(deftest test-errors-goes-deep
+  (let [request {:form-params {"email-address" "asdf"}}
+        errors (forms/errors request test-schema)]
+    (is (= (-> errors keys count) 3))
+    (is (some #(= % :invalid-email) (errors "email-address")))
+    (is (some #(= % :required) (errors "password")))
+    (is (some #(= % :required) (errors "repeat-password")))))

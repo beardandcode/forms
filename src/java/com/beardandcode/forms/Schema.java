@@ -69,7 +69,7 @@ public class Schema {
         JsonNode instance = JsonLoader.fromString(representation);
         ListProcessingReport report = new ListProcessingReport();
         
-        report.mergeWith(schema.validate(instance));
+        report.mergeWith(schema.validate(instance, true));
         
         return report.asJson().toString();
     }
