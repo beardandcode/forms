@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.File;
 
 import clojure.lang.IPersistentMap;
-import clojure.lang.ISeq;
-import clojure.lang.RT;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,8 +16,6 @@ import com.github.fge.jsonschema.core.exceptions.ProcessingException;
 import com.github.fge.jsonschema.core.load.SchemaLoader;
 import com.github.fge.jsonschema.core.report.ListProcessingReport;
 import com.github.fge.jsonschema.core.tree.SchemaTree;
-import com.github.fge.jsonschema.core.util.Dictionary;
-import com.github.fge.jsonschema.format.FormatAttribute;
 import com.github.fge.jsonschema.library.Keyword;
 import com.github.fge.jsonschema.library.Library;
 import com.github.fge.jsonschema.main.JsonSchema;
@@ -34,7 +30,6 @@ public class Schema {
     static {
         ValidationConfiguration validationConfiguration = ValidationConfiguration.byDefault();
         Library defaultLib = validationConfiguration.getDefaultLibrary();
-        Dictionary<FormatAttribute> formatAttributes = defaultLib.getFormatAttributes();
 
         defaultLib = defaultLib.thaw()
             .addFormatAttribute("password", PasswordFormatAttribute.getInstance())
@@ -57,21 +52,38 @@ public class Schema {
         schema = SCHEMA_FACTORY.getJsonSchema(node);
     }
 
-    public boolean isValid() {
-        return SCHEMA_FACTORY.getSyntaxValidator().schemaIsValid(node);
+    public boolean isValid() throws IOException, ProcessingException {
+        boolean valid = SCHEMA_FACTORY.getSyntaxValidator().schemaIsValid(node);
+
+        if (valid) {
+            long numberOfSyntaxErrors = Lists.newArrayList(validateAsList("{}").iterator()).stream()
+                    .filter(processingMessage -> {
+                        JsonNode msg = processingMessage.asJson();
+
+                        return msg.isObject() && msg.get("domain").asText().equals("syntax");
+                    }).count();
+
+            valid = numberOfSyntaxErrors == 0;
+        }
+
+        return valid;
     }
 
     public IPersistentMap asMap() {
         return new SchemaWalker(loader).walk(tree);
     }
 
-    public String validate(String representation) throws IOException, ProcessingException {
+    private ListProcessingReport validateAsList(final String representation) throws IOException, ProcessingException {
         JsonNode instance = JsonLoader.fromString(representation);
         ListProcessingReport report = new ListProcessingReport();
-        
+
         report.mergeWith(schema.validate(instance, true));
-        
-        return report.asJson().toString();
+
+        return report;
+    }
+
+    public String validate(String representation) throws IOException, ProcessingException {
+        return validateAsList(representation).asJson().toString();
     }
     
 }

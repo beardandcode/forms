@@ -5,4 +5,5 @@
 (deftest test-new-schema
   (is (schema/new "schema/test.json"))
   (is (nil? (schema/new "schema/invalid.json")))
-  (is (nil? (schema/new "schema/does-not-exist.json"))))
+  (is (nil? (schema/new "schema/does-not-exist.json")))
+  (is (nil? (schema/new "schema/invalid-bad-properties-and-attrs.json"))))
