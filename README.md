@@ -2,6 +2,8 @@
 
 A library to generate and validate HTML forms based on JSON Schema.
 
+[![Clojars Project](http://clojars.org/com.beardandcode/forms/latest-version.svg)](http://clojars.org/com.beardandcode/forms)
+
 ## Try
 
 Find your way to the directory where you checked out this project and execute the following:
