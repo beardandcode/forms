@@ -128,6 +128,11 @@
     (is (= (count address-fields) 3))
     (is (= (-> address-fields first :attrs :name) "address_line-1"))))
 
+(deftest test-build-nested-with-values
+  (let [form (->hickory [(forms/build "/" nested-schema {:values {"address" {"line-1" "5 Foo Street"}}})])
+        address-line-1 (first (s/select (s/and (s/tag :input) (s/attr :name #(= % "address_line-1"))) form))]
+    (is (= (-> address-line-1 :attrs :value) "5 Foo Street"))))
+
 
 
 

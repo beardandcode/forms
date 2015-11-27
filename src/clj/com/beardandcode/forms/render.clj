@@ -46,7 +46,7 @@
 (defmethod render-property "object" [id name details value errors]
   [:fieldset {:id id}
    (concat (list [:legend (pick-title name details)])
-           (schema details [] {} id))])
+           (schema details value {} id))])
 
 (defmethod render-property nil [id name details value errors]
   (if-let [enum (details "enum")]
