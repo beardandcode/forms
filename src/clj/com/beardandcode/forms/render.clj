@@ -8,12 +8,13 @@
 (defn- password? [details]
   (= (details "format") "password"))
 
-(defn- sort-properties [schema-properties ordered-names]
+(defn- sort-properties [schema-properties ordered-names-raw]
   (let [all-names (set (keys schema-properties))
+        ordered-names (filter all-names ordered-names-raw)
         unordered-names (difference all-names ordered-names)
         pick #(vector % (schema-properties %))]
     (concat (map pick ordered-names)
-            (map pick unordered-names))))
+                    (map pick unordered-names))))
 
 
 

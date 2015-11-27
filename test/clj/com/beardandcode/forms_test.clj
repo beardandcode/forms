@@ -10,6 +10,7 @@
 (forms/defschema no-title-schema "schema/no-title.json")
 (forms/defschema description-schema "schema/description.json")
 (forms/defschema enum-schema "schema/enum.json")
+(forms/defschema invalid-order-schema "schema/invalid-order.json")
 
 (deftest test-build-basics
   (let [form (->hickory [(forms/build "/endpoint" test-schema)])
@@ -111,6 +112,11 @@
     (is (= (-> password-errors first :content first) ":required"))
     (is (= (-> repeat-password :attrs :class) ""))
     (is (= (count repeat-password-errors) 0))))
+
+(deftest test-build-invalid-order
+  (let [form (->hickory [(forms/build "/" invalid-order-schema)])]
+    (is form)
+    (is (= (count (s/select (s/tag :label) form)) 1))))
 
 
 

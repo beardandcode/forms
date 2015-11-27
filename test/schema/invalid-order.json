@@ -1,0 +1,11 @@
+{
+    "$schema": "http://forms.beardandcode.com/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "some-field": {
+            "type": "string"
+        }
+    },
+    "order": ["some-field", "not-a-field"],
+    "additionalProperties": false
+}
