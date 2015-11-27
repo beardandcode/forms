@@ -11,6 +11,7 @@
 (forms/defschema description-schema "schema/description.json")
 (forms/defschema enum-schema "schema/enum.json")
 (forms/defschema invalid-order-schema "schema/invalid-order.json")
+(forms/defschema nested-schema "schema/nested.json")
 
 (deftest test-build-basics
   (let [form (->hickory [(forms/build "/endpoint" test-schema)])
@@ -117,6 +118,16 @@
   (let [form (->hickory [(forms/build "/" invalid-order-schema)])]
     (is form)
     (is (= (count (s/select (s/tag :label) form)) 1))))
+
+(deftest test-build-nested
+  (let [form (->hickory [(forms/build "/" nested-schema)])
+        address-fieldset (first (s/select (s/id "address") form))
+        address-fields (s/select (s/descendant (s/id "address") (s/tag :input)) form)]
+    (is address-fieldset)
+    (is (= (-> address-fieldset :attrs :id) "address"))
+    (is (= (count address-fields) 3))
+    (is (= (-> address-fields first :attrs :name) "address_line-1"))))
+
 
 
 

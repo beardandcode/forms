@@ -1,0 +1,22 @@
+{
+    "$schema": "http://forms.beardandcode.com/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "address": {
+            "type": "object",
+            "properties": {
+                "line-1": { "type": "string" },
+                "line-2": { "type": "string" },
+                "postcode": { "type": "string" }
+            },
+            "required": ["postcode"],
+            "order": ["line-1", "line-2", "postcode"],
+            "additionalProperties": false
+        }
+    },
+    "required": ["address"],
+    "additionalProperties": false
+}
