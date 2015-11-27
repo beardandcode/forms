@@ -38,6 +38,8 @@
 (defn- as-id [path] (clojure.string/join "_" path))
 (defn- as-name [path] (last path))
 
+(defn error-list [errors]
+  (map #(vector :p {:class "error"} %) errors))
 
 (defmethod render-property "string" [path details values errors]
   (let [prop-errors (find-errors errors path)
@@ -45,7 +47,7 @@
         name (as-name path)]
     [:label {:class (if (> (count prop-errors) 0) "error" "") :id id} (pick-title name details)
      (concat (if (details "description") (list [:p (details "description")]) '())
-             (if (> (count prop-errors) 0) (map #(vector :p {:class "error"} %) prop-errors) '())
+             (error-list prop-errors)
              (list [:input {:type (if (password? details) "password" "text")
                             :name id
                             :value (if (password? details) nil (find-value values path))}]))]))
@@ -53,6 +55,7 @@
 (defmethod render-property "object" [path details values errors]
   [:fieldset {:id (as-id path)}
    (concat (list [:legend (pick-title (as-name path) details)])
+           (error-list (find-errors errors path))
            (schema details values errors path))])
 
 (defmethod render-property nil [path details values errors]
@@ -62,7 +65,7 @@
       [:fieldset {:class (if (> (count prop-errors) 0) "error" "") :id id}
        (concat (list [:legend (pick-title name details)])
                (if (details "description") (list [:p (details "description")]) '())
-               (if (> (count prop-errors) 0) (map #(vector :p {:class "error"} %) prop-errors) '())
+               (error-list prop-errors)
                (map #(vector :label
                              (let [input-attrs {:type "radio" :value % :name id}]
                                [:input (if (= (find-value values path) %)

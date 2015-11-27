@@ -142,6 +142,17 @@
         address-line-1 (first (s/select (s/and (s/tag :input) (s/attr :name #(= % "address_line-1"))) form))]
     (is (= (-> address-line-1 :attrs :value) "5 Foo Street"))))
 
+(deftest test-build-with-root-errors
+  (let [form (->hickory [(forms/build "/" nested-schema {:errors {"/" [:some-error]
+                                                                  "/address" [:another-error]}
+                                                         :error-text-fn #(str %3)})])
+        root-errors (s/select (s/child (s/tag :form) (s/class "error")) form)
+        address-errors (s/select (s/child (s/tag :fieldset) (s/class "error")) form)]
+    (is (= (count root-errors) 1))
+    (is (= (-> root-errors first :content first) ":some-error"))
+    (is (= (count address-errors) 1))
+    (is (= (-> address-errors first :content first) ":another-error"))))
+
 
 
 

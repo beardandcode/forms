@@ -20,6 +20,7 @@
                               {} errors)
            hiccup [:form {:action action :method method}
                    (concat '() (csrf-fn)
+                           (render/error-list (error-text "/" []))
                            (render/schema schema-map values error-text)
                            (list [:input {:type "submit" :value (schema-map "submit")}]))]]
        hiccup)))
