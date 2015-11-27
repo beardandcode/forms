@@ -17,35 +17,64 @@
                     (map pick unordered-names))))
 
 
-
 (defmulti render-property (fn [_ details _ _] (details "type")))
 
-(defmethod render-property "string" [name details value errors]
-  [:label {:class (if (> (count errors) 0) "error" "") :id name} (pick-title name details)
-   (concat (if (details "description") (list [:p (details "description")]) '())
-           (if (> (count errors) 0) (map #(vector :p {:class "error"} %) errors) '())
-           (list [:input {:type (if (password? details) "password" "text")
-                          :name name
-                          :value (if (password? details) nil value)}]))])
 
-(defmethod render-property nil [name details value errors]
-  (if-let [enum (details "enum")]
-    [:fieldset {:class (if (> (count errors) 0) "error" "") :id name}
-     (concat (list [:legend (pick-title name details)])
-             (if (details "description") (list [:p (details "description")]) '())
-             (if (> (count errors) 0) (map #(vector :p {:class "error"} %) errors) '())
-              (map #(vector :label
-                            (let [input-attrs {:type "radio" :value % :name name}]
-                              [:input (if (= value %) (assoc input-attrs :checked "checked") input-attrs)])
-                            (s/capitalize %)) enum))]))
+(defn schema
+  ([schema-map values errors] (schema schema-map values errors []))
+  ([schema-map values errors prefixes]
+    (map (fn [[name details]]
+           (render-property (conj prefixes name) details values errors))
+         (sort-properties (schema-map "properties")
+                          (schema-map "order")))))
+
+
+(defn- find-value [values path]
+  (get-in values path))
+
+(defn- find-errors [errors path]
+  (errors (str "/" (clojure.string/join "/" path))))
+
+(defn- as-id [path] (clojure.string/join "_" path))
+(defn- as-name [path] (last path))
+
+(defn error-list [errors]
+  (map #(vector :p {:class "error"} %) errors))
+
+(defmethod render-property "string" [path details values errors]
+  (let [prop-errors (find-errors errors path)
+        id (as-id path)
+        name (as-name path)]
+    [:label {:class (if (> (count prop-errors) 0) "error" "") :id id} (pick-title name details)
+     (concat (if (details "description") (list [:p (details "description")]) '())
+             (error-list prop-errors)
+             (list [:input {:type (if (password? details) "password" "text")
+                            :name id
+                            :value (if (password? details) nil (find-value values path))}]))]))
+
+(defmethod render-property "object" [path details values errors]
+  [:fieldset {:id (as-id path)}
+   (concat (list [:legend (pick-title (as-name path) details)])
+           (error-list (find-errors errors path))
+           (schema details values errors path))])
+
+(defmethod render-property nil [path details values errors]
+  (let [prop-errors (find-errors errors path)
+        id (as-id path) name (as-name path)]
+    (if-let [enum (details "enum")]
+      [:fieldset {:class (if (> (count prop-errors) 0) "error" "") :id id}
+       (concat (list [:legend (pick-title name details)])
+               (if (details "description") (list [:p (details "description")]) '())
+               (error-list prop-errors)
+               (map #(vector :label
+                             (let [input-attrs {:type "radio" :value % :name id}]
+                               [:input (if (= (find-value values path) %)
+                                         (assoc input-attrs :checked "checked")
+                                         input-attrs)])
+                             (s/capitalize %)) enum))])))
 
 (defmethod render-property :default [& args]
   (println args))
 
 
 
-(defn schema [schema-map values errors]
-  (map (fn [[name details]]
-         (render-property name details (get values name "") (get errors name [])))
-       (sort-properties (schema-map "properties")
-                        (schema-map "order"))))
