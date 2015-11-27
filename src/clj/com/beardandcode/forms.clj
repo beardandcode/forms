@@ -24,15 +24,33 @@
                            (list [:input {:type "submit" :value (schema-map "submit")}]))]]
        hiccup)))
 
-(defn values [request]
-  (:form-params request))
+(defn- with-prefix [n prefix]
+  (if (empty? prefix)
+    n (str prefix "_" n)))
+
+(defn- values-using-schema [data schema-map prefix]
+  (reduce (fn [out-map [name detail]]
+            (let [name-with-prefix (with-prefix name prefix)]
+              (if (= (detail "type") "object")
+                (let [sub-values (values-using-schema data detail name-with-prefix)]
+                  (if (empty? sub-values)
+                    out-map
+                    (assoc out-map name sub-values)))
+                (if (and (contains? data name-with-prefix)
+                         (not (empty? (data name-with-prefix))))
+                  (assoc out-map name (data name-with-prefix))
+                  out-map))))
+          {} (schema-map "properties")))
+
+(defn values [request schema]
+  (values-using-schema (:form-params request) (schema/as-map schema) ""))
 
 (defn errors
   ([request schema] (errors request schema {}))
   ([request schema {:keys [csrf-field]
                     :or {csrf-field "__anti-forgery-token"}}]
-   (let [params (->> (values request)
-                     (filter (fn [[key value]] (not (or (= key csrf-field) (empty? value)))))
+   (let [params (->> (values request schema)
+                     (filter (fn [[key value]] (not (= key csrf-field))))
                      flatten
                      (apply hash-map))]
      (schema/validate schema params))))

@@ -39,8 +39,8 @@
          :get (render-schema schema base-path)
          :post (if-let [errors (forms/errors request schema)]
                  (render-schema schema base-path errors
-                                (forms/values request))
-                 (str (forms/values request))))))
+                                (forms/values request schema))
+                 (str (forms/values request schema))))))
 
 (defn route-fn [& _]
   (-> (routes

@@ -134,6 +134,28 @@
 
 
 
+(deftest test-values-nested
+  (let [values (forms/values {:form-params {"address_line-1" "5 Foo Street"
+                                            "shouldnt-be-there" "it is"
+                                            "name" "Mr Bar"}}
+                             nested-schema)]
+    (is (= "Mr Bar" (values "name")))
+    (is (= "5 Foo Street" (get-in values ["address" "line-1"])))
+    (is (nil? (values "shouldnt-be-there")))))
+
+(deftest test-nuking-empty-strings
+  (let [values (forms/values {:form-params {"name" ""
+                                            "address_line-1" ""}}
+                             nested-schema)]
+    (is (not ((set (keys values)) "name")))
+    (is (not ((set (keys values)) "address")))))
+
+
+
+
+
+
+
 
 (deftest test-errors-missing-params
   (let [request {:form-params {}}
