@@ -7,6 +7,11 @@
   (as-map [_])
   (validate [_ instance]))
 
+(defn- pointer [error & suffixes]
+  (let [parts (filter #(not (or (empty? %) (= "properties" %)))
+                      (clojure.string/split ((error "instance") "pointer") #"/"))]
+    (str "/" (clojure.string/join "/" (concat parts suffixes)))))
+
 (extend Schema
   ISchema
   {:as-map #(.asMap %)
@@ -15,13 +20,15 @@
                  (if (not (empty? raw-errors))
                    (->> raw-errors
                         (map (fn [error] (cond
-                                           (= (error "keyword") "required")
-                                           (map #(list % :required) (error "missing"))
-                                           (= (error "keyword") "format")
-                                           [[(apply str (rest ((error "instance") "pointer")))
-                                             (keyword (str "invalid-" (error "attribute")))]]
-                                           :else
-                                           [])))
+                                          (= (error "keyword") "required")
+                                          (map #(list (pointer error %) :required) (error "missing"))
+
+                                          (= (error "keyword") "format")
+                                          [[(pointer error)
+                                            (keyword (str "invalid-" (error "attribute")))]]
+
+                                          :else
+                                          [])))
                         (reduce (fn [error-map errors]
                                   (reduce (fn [error-map [field error]]
                                             (assoc error-map field (if-let [other-errors (error-map field)]

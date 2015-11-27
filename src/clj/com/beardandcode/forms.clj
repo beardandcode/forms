@@ -20,7 +20,7 @@
                               {} errors)
            hiccup [:form {:action action :method method}
                    (concat '() (csrf-fn)
-                           (render/schema schema-map values error-text "")
+                           (render/schema schema-map values error-text)
                            (list [:input {:type "submit" :value (schema-map "submit")}]))]]
        hiccup)))
 
@@ -32,10 +32,7 @@
   (reduce (fn [out-map [name detail]]
             (let [name-with-prefix (with-prefix name prefix)]
               (if (= (detail "type") "object")
-                (let [sub-values (values-using-schema data detail name-with-prefix)]
-                  (if (empty? sub-values)
-                    out-map
-                    (assoc out-map name sub-values)))
+                (assoc out-map name (values-using-schema data detail name-with-prefix))
                 (if (and (contains? data name-with-prefix)
                          (not (empty? (data name-with-prefix))))
                   (assoc out-map name (data name-with-prefix))

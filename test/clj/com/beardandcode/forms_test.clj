@@ -89,9 +89,9 @@
       (is (= (-> checked-types first :attrs :value) "free")))))
 
 (deftest test-build-with-errors
-  (let [form (->hickory [(forms/build "/" test-schema {:errors {"email-address" [:invalid-email]
-                                                                "type" [:required :some-other-error]
-                                                                "password" [:required]}
+  (let [form (->hickory [(forms/build "/" test-schema {:errors {"/email-address" [:invalid-email]
+                                                                "/type" [:required :some-other-error]
+                                                                "/password" [:required]}
                                                        :error-text-fn #(str %3)})])
         email (first (s/select (s/id "email-address") form))
         email-errors (s/select (s/and (s/tag :p) (s/class "error")) email)
@@ -113,6 +113,15 @@
     (is (= (-> password-errors first :content first) ":required"))
     (is (= (-> repeat-password :attrs :class) ""))
     (is (= (count repeat-password-errors) 0))))
+
+(deftest test-build-nested-with-errors
+  (let [form (->hickory [(forms/build "/" nested-schema {:errors {"/address/postcode" [:required]}
+                                                         :error-text-fn #(str %3)})])
+        postcode (first (s/select (s/id "address_postcode") form))
+        postcode-errors (s/select (s/and (s/tag :p) (s/class "error")) postcode)]
+    (is (= (-> postcode :attrs :class) "error"))
+    (is (= (count postcode-errors) 1))
+    (is (= (-> postcode-errors first :content first) ":required"))))
 
 (deftest test-build-invalid-order
   (let [form (->hickory [(forms/build "/" invalid-order-schema)])]
@@ -152,8 +161,7 @@
   (let [values (forms/values {:form-params {"name" ""
                                             "address_line-1" ""}}
                              nested-schema)]
-    (is (not ((set (keys values)) "name")))
-    (is (not ((set (keys values)) "address")))))
+    (is (not ((set (keys values)) "name")))))
 
 
 
@@ -166,9 +174,9 @@
   (let [request {:form-params {}}
         errors (forms/errors request test-schema)]
     (is (= (-> errors keys count) 3))
-    (is (some #(= % :required) (errors "email-address")))
-    (is (some #(= % :required) (errors "password")))
-    (is (some #(= % :required) (errors "repeat-password")))))
+    (is (some #(= % :required) (errors "/email-address")))
+    (is (some #(= % :required) (errors "/password")))
+    (is (some #(= % :required) (errors "/repeat-password")))))
 
 (deftest test-errors-empty-params
   (let [request {:form-params {"email-address" ""
@@ -176,9 +184,9 @@
                                "repeat-password" ""}}
         errors (forms/errors request test-schema)]
     (is (= (-> errors keys count) 3))
-    (is (some #(= % :required) (errors "email-address")))
-    (is (some #(= % :required) (errors "password")))
-    (is (some #(= % :required) (errors "repeat-password")))))
+    (is (some #(= % :required) (errors "/email-address")))
+    (is (some #(= % :required) (errors "/password")))
+    (is (some #(= % :required) (errors "/repeat-password")))))
 
 (deftest test-errors-when-bad-email
   (let [request {:form-params {"email-address" "foobar.com"
@@ -186,7 +194,7 @@
                                "repeat-password" "asdf"}}
         errors (forms/errors request test-schema)]
     (is (= (-> errors keys count) 1))
-    (is (some #(= % :invalid-email) (errors "email-address")))))
+    (is (some #(= % :invalid-email) (errors "/email-address")))))
 
 (deftest test-errors-when-valid
   (let [request {:form-params {"email-address" "foo@bar.com"
@@ -205,6 +213,11 @@
   (let [request {:form-params {"email-address" "asdf"}}
         errors (forms/errors request test-schema)]
     (is (= (-> errors keys count) 3))
-    (is (some #(= % :invalid-email) (errors "email-address")))
-    (is (some #(= % :required) (errors "password")))
-    (is (some #(= % :required) (errors "repeat-password")))))
+    (is (some #(= % :invalid-email) (errors "/email-address")))
+    (is (some #(= % :required) (errors "/password")))
+    (is (some #(= % :required) (errors "/repeat-password")))))
+
+(deftest test-errors-nested
+  (let [request {:form-params {"address_line-1" "5 Foo Street"}}
+        errors (forms/errors request nested-schema)]
+    (is (some #(= % :required) (errors "/address/postcode")))))
