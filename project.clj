@@ -1,4 +1,4 @@
-(defproject com.beardandcode/forms "0.1.3"
+(defproject com.beardandcode/forms "0.1.4"
   :description "A library to generate and validate HTML forms based on JSON Schema"
   :url "https://github.com/beardandcode/forms"
   :license {:name "MIT"
