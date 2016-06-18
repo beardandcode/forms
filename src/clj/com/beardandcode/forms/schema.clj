@@ -38,6 +38,6 @@
                                 {})))))})
 
 (defn new [path]
-  (if-let [file (-> path io/resource io/file)]
-    (let [schema (Schema. file)]
+  (if-let [schema-url (io/resource path)]
+    (let [schema (Schema. (slurp schema-url))]
       (if (.isValid schema) schema))))

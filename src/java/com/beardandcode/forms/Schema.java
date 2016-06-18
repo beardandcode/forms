@@ -46,8 +46,8 @@ public class Schema {
     private final SchemaTree tree;
     private final JsonSchema schema;
 
-    public Schema(final File schemaFile) throws IOException, ProcessingException {
-        node = MAPPER.readTree(schemaFile);
+    public Schema(final String schemaString) throws IOException, ProcessingException {
+        node = MAPPER.readTree(schemaString);
         tree = loader.load(node).setPointer(JsonPointer.empty());
         schema = SCHEMA_FACTORY.getJsonSchema(node);
     }
