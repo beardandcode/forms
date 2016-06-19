@@ -1,5 +1,6 @@
 (ns com.beardandcode.forms
-  (:require [com.beardandcode.forms.render :as render]
+  (:require [hiccup.core :refer [html]]
+            [com.beardandcode.forms.render :as render]
             [com.beardandcode.forms.schema :as schema]
             [com.beardandcode.forms.text :as text]))
 
@@ -23,7 +24,7 @@
                            (render/error-list (error-text "/" []))
                            (render/schema schema-map values error-text)
                            (list [:input {:type "submit" :value (schema-map "submit")}]))]]
-       hiccup)))
+       (html hiccup))))
 
 (defn- with-prefix [n prefix]
   (if (empty? prefix)

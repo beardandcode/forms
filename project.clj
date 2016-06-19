@@ -5,15 +5,16 @@
             :url "http://opensource.org/licenses/MIT"}
 
   :min-lein-version "2.0.0"
-  
+
   :plugins [[lein-ancient "0.6.7"]
             [jonase/eastwood "0.2.1"]
             [lein-bikeshed "0.2.0"]
             [lein-kibit "0.1.2"]]
-  
+
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [cheshire "5.5.0"]
-                 [com.github.fge/json-schema-validator "2.2.6"]]
+                 [com.github.fge/json-schema-validator "2.2.6"]
+                 [hiccup "1.0.5"]]
 
   :source-paths ["src/clj"]
   :test-paths ["test/clj"]
@@ -36,7 +37,6 @@
                                   [ch.qos.logback/logback-classic "1.1.3"]
                                   [com.beardandcode/components "0.1.0"]
                                   [ring/ring-anti-forgery "1.0.0"]
-                                  [compojure "1.4.0"]
-                                  [hiccup "1.0.5"]]
+                                  [compojure "1.4.0"]]
                    :source-paths ["dev"]
                    :resource-paths ["test"]}})
